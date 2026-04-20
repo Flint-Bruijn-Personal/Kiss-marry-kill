@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>Kiss Marry Kill</title>
+
+<style>
+body {
+    font-family: Arial;
+    text-align: center;
+    background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+    margin: 0;
+    padding-bottom: 80px; /* 🔥 ruimte voor feedback knop */
+}
+
+h1 { color: white; margin-top: 20px; }
+
+.hidden { display: none; }
+
+/* GENDER */
+.gender-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 60px;
+}
+
+.gender-btn {
+    width: 160px;
+    height: 160px;
+    border-radius: 20px;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.male { background: #4da6ff; }
+.female { background: #ff66b2; }
+.nb { background: #4CAF50; }
+
+/* MENU */
+#menu {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 60px;
+}
+
+#menu button {
+    width: 340px;
+    padding: 22px;
+    font-size: 22px;
+    margin: 12px;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    background: white;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+}
+
+#menu button:hover {
+    transform: scale(1.05);
+}
+
+/* GAME */
+#game {
+    display: none;
+}
+
+/* 🔥 BELANGRIJK: ruimte zodat knop niet botst met feedback */
+#game button:first-child {
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+#names {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin: 30px;
+}
+
+.card {
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    cursor: grab;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    font-weight: bold;
+}
+
+.zones {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+}
+
+.zone {
+    width: 150px;
+    height: 160px;
+    background: rgba(255,255,255,0.85);
+    border-radius: 10px;
+    padding: 10px;
+}
+
+#warning {
+    color: red;
+}
+
+/* FEEDBACK FIXED ON BOTTOM */
+.feedback {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    text-align: center;
+    background: rgba(0,0,0,0.2);
+    padding: 10px 0;
+    z-index: 1000;
+}
+
+.feedback a {
+    background: black;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    text-decoration: none;
+}
+</style>
+
+</head>
+<body>
+
+<h1>Kiss / Marry / Kill</h1>
+
+<!-- GENDER -->
+<div id="genderMenu">
+    <h2>Kies je geslacht</h2>
+
+    <div class="gender-container">
+        <div class="gender-btn male" onclick="setGender('male')">♂️ Jongen</div>
+        <div class="gender-btn nb" onclick="setGender('nb')">⚧ Non-binair</div>
+        <div class="gender-btn female" onclick="setGender('female')">♀️ Meisje</div>
+    </div>
+</div>
+
+<!-- MENU -->
+<div id="menu">
+    <h2>Kies categorie</h2>
+
+    <button onclick="startGame('celebs')">Bekende Personen</button>
+    <button onclick="startGame('ag1b')">AG1B</button>
+    <button onclick="startGame('other')">Overig</button>
+
+    <button onclick="changeGender()">🔁 Wijzig geslacht</button>
+</div>
+
+<!-- GAME -->
+<div id="game">
+
+    <button onclick="changeGender()">🔁 Wijzig geslacht</button>
+
+    <div id="names"></div>
+
+    <div class="zones">
+        <div class="zone" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <h3>Kiss 💋</h3>
+        </div>
+        <div class="zone" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <h3>Marry 💍</h3>
+        </div>
+        <div class="zone" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <h3>Kill ☠️</h3>
+        </div>
+    </div>
+
+    <div id="warning"></div>
+
+    <button onclick="nextRound()">➡️ Volgende ronde</button><br>
+    <button onclick="goBack()">⬅️ Terug</button>
+
+</div>
+
+<!-- FEEDBACK -->
+<div class="feedback">
+    <a href="https://forms.gle/oG3ncjVtZRaLkhNC8" target="_blank">
+        📩 Feedback
+    </a>
+</div>
+
+<script>
+let currentGroup = "";
+let gender = "";
+
+/* DATA */
+const data = {
+    celebs: [
+        {name:"Taylor Swift", gender:"female"},
+        {name:"Billie Eilish", gender:"female"},
+        {name:"Zendaya", gender:"female"},
+        {name:"Ariana Grande", gender:"female"},
+        {name:"Rihanna", gender:"female"},
+        {name:"Selena Gomez", gender:"female"},
+        {name:"Kim Kardashian", gender:"female"},
+
+        {name:"Cristiano Ronaldo", gender:"male"},
+        {name:"Drake", gender:"male"},
+        {name:"Tom Holland", gender:"male"},
+        {name:"Elon Musk", gender:"male"},
+        {name:"Harry Styles", gender:"male"},
+        {name:"The Weeknd", gender:"male"},
+        {name:"Justin Bieber", gender:"male"}
+    ],
+
+    ag1b: [
+        {name:"Flint", gender:"male"},
+        {name:"Ahmad", gender:"male"},
+        {name:"Lukas", gender:"male"},
+        {name:"Dani", gender:"male"},
+        {name:"Hugo", gender:"male"},
+
+        {name:"Emma", gender:"female"},
+        {name:"Jolijn", gender:"female"},
+        {name:"Femke", gender:"female"},
+        {name:"Lindsay", gender:"female"},
+        {name:"Doutzen", gender:"female"}
+    ],
+
+    other: [
+        {name:"Flint", gender:"male"},
+        {name:"Ravi", gender:"male"},
+        {name:"Ajay", gender:"male"},
+        {name:"Mo", gender:"male"},
+
+        {name:"Pien", gender:"female"},
+        {name:"Bente", gender:"female"},
+        {name:"Fay", gender:"female"},
+        {name:"Ashley", gender:"female"}
+    ]
+};
+
+/* GENDER */
+function setGender(g){
+    gender = g;
+    document.getElementById("genderMenu").style.display = "none";
+    document.getElementById("menu").style.display = "flex";
+}
+
+function changeGender(){
+    document.getElementById("game").style.display = "none";
+    document.getElementById("menu").style.display = "none";
+    document.getElementById("genderMenu").style.display = "block";
+}
+
+/* GAME */
+function startGame(group){
+    currentGroup = group;
+    document.getElementById("menu").style.display = "none";
+    document.getElementById("game").style.display = "block";
+    loadRound();
+}
+
+function loadRound(){
+    document.getElementById("warning").textContent = "";
+
+    const namesDiv = document.getElementById("names");
+    namesDiv.innerHTML = "";
+
+    document.querySelectorAll(".zone").forEach(z=>{
+        z.innerHTML = "<h3>"+z.querySelector("h3").textContent+"</h3>";
+    });
+
+    let pool;
+
+    if(gender === "nb"){
+        pool = data[currentGroup];
+    } else {
+        pool = data[currentGroup].filter(p => p.gender !== gender);
+    }
+
+    let selected = pool.sort(()=>0.5-Math.random()).slice(0,3);
+
+    selected.forEach((p,i)=>{
+        let div = document.createElement("div");
+        div.className = "card";
+        div.textContent = p.name;
+        div.draggable = true;
+        div.id = "card"+i;
+        div.ondragstart = drag;
+        namesDiv.appendChild(div);
+    });
+}
+
+function nextRound(){
+    let filled = 0;
+
+    document.querySelectorAll(".zone").forEach(z=>{
+        if(z.querySelector(".card")) filled++;
+    });
+
+    if(filled < 3){
+        document.getElementById("warning").textContent = "⚠️ Vul alles in!";
+        return;
+    }
+
+    loadRound();
+}
+
+function allowDrop(e){ e.preventDefault(); }
+
+function drag(e){
+    e.dataTransfer.setData("text", e.target.id);
+}
+
+function drop(e){
+    e.preventDefault();
+    let id = e.dataTransfer.getData("text");
+    let card = document.getElementById(id);
+    let zone = e.target.closest(".zone");
+
+    if(zone.querySelector(".card")) return;
+    zone.appendChild(card);
+}
+
+function goBack(){
+    document.getElementById("game").style.display = "none";
+    document.getElementById("menu").style.display = "none";
+    document.getElementById("genderMenu").style.display = "block";
+}
+</script>
+
+</body>
+</html>
